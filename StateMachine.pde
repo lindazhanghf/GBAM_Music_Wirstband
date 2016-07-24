@@ -71,18 +71,24 @@ public class StateMachine {
      {
       if (absMax == absX)
       {
-        if (x >= 0) AudioManipulation.play(xPositive);
-        text("Beat1", 10, 40);
+        if (x >= 0) {
+          AudioManipulation.play(xPositive);
+          text("!!!", 80, TEXT_ROW);
+        }
       }
       else if (absMax == absY)
       {
-        if (y >= 0) AudioManipulation.play(yPositive);
-        text("Beat2", 10, 60);
+        if (y >= 0) {
+          AudioManipulation.play(yPositive);
+          text("!!!", 80, TEXT_ROW+20);
+        }
       }
       else
       {
-        if (z >= 0) AudioManipulation.play(zPositive);
-        text("Beat3", 10, 80);
+        if (z >= 0) {
+          AudioManipulation.play(zPositive);
+          text("!!!", 80, TEXT_ROW + 40);
+        }
         println("else");
       }
     }

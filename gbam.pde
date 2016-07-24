@@ -9,11 +9,12 @@ static final int NUM_SAMPLE = 300;
 static final int IDLE_STATE = 0;
 static final int SPRINT_STATE = 1;
 static final int SPRINT_BOUND = 10000;
+static final int TEXT_ROW = 80;
 
 /* Raw Data */
-public int x;
-public int y;
-public int z;     // Sometimes affected by gravity
+public long x;
+public long y;
+public long z;     // Sometimes affected by gravity
 public double gyroX;
 public double gyroY;
 public double gyroZ;
@@ -57,13 +58,15 @@ public AudioPlayer xPositive;
 public AudioPlayer zPositive;
 public String songName = "328366__frankum__electronic-dance-loop-02.mp3";
 
+
+
 void setup() {
     size(500, 500, OPENGL);
-    textSize(20);
+    textSize(16);
     //Serial Port initilizing
     initializing = true;
-    // println(Serial.list());
-    println("\nINITIALIZING...\nPlease wait for about 30 seconds");
+    println(Serial.list());
+    // println("\nINITIALIZING...\nPlease wait for about 30 seconds");
     port = new Serial(this, "/dev/ttyUSB0", 115200);
     port.write('r');
     seconds = second();
@@ -76,8 +79,8 @@ void setup() {
     zPositive = minim.loadFile("./audio/25666__walter-odington__deep-short-one-snare.wav");
 }
 
-void initializePort() {
-    port = new Serial(this, "/dev/ttyUSB1", 115200);
+public void initializePort() {
+    port = new Serial(this, "/dev/ttyUSB0", 115200);
     port.write('r');    
 }
 
@@ -108,21 +111,39 @@ void draw() {
     }
 
     /* Main Execution */
-    if (baseSong.isPlaying()) text("Playing: " + songName, 10, 20);
-
     if (stateMachine.execute() == true)
     {
       int nextState = stateMachine.onExit();
       stateMachine.changeState(nextState);
     }
 
-    try {
-        serialEvent(port);
-    }
-    catch (java.lang.RuntimeException e) {
-        println(e);
-        initializePort();
-    }
+    if (baseSong.isPlaying()) text("Playing: " + songName, 10, 20);
+
+    text("x:" + formatNumber(x) + " y:" + formatNumber(y) + " z:" + formatNumber(z), 10, 40);
+    text("gyro-x:" + gyroX, 10, 60);
+    text(" y:" + gyroY, 140, 60);
+    text(" z:" + gyroZ, 250, 60);
+    text("Beat x", 10, TEXT_ROW);
+    text("Beat y", 10, TEXT_ROW + 20);
+    text("Beat z", 10, TEXT_ROW + 40);
+
+    if (xPositive.isPlaying()) text("!!!", 80, TEXT_ROW);
+
+    if (yPositive.isPlaying()) text("!!!", 80, TEXT_ROW+20);
+
+    if (zPositive.isPlaying()) text("!!!", 80, TEXT_ROW + 40);
+    // if (millis() - interval > 2000) {
+    //     // resend single character to trigger DMP init/start
+    //     // in case the MPU is halted/reset while applet is running
+    //     port = new Serial(this, "/dev/ttyUSB0", 115200);
+    // }
+    // try {
+    //     serialEvent(port);
+    // }
+    // catch (java.lang.RuntimeException e) {
+    //     println(e);
+    //     initializePort();
+    // }
 
 }
 
@@ -136,11 +157,11 @@ void serialEvent(Serial port)
             /* Update all data once received new x,y,z data */
             // R^2 = Rx^2 + Ry^2 + Rz^2 
             combinedR = Math.sqrt(Math.pow(x,2)+Math.pow(y,2)+Math.pow(z,2));
-            absAverage = (Math.abs(x) + Math.abs(y) + Math.abs(z))/3;
+            absAverage = (Math.abs(x) + Math.abs(y) + Math.abs(z))/3.0;
             absMax = (int) Math.max(Math.abs(x),  Math.max(Math.abs(y), Math.abs(z)));
-            absX =  Math.abs(x);
-            absY =  Math.abs(y);
-            absZ = Math.abs(z);
+            absX = (int) Math.abs(x);
+            absY = (int) Math.abs(y);
+            absZ = (int) Math.abs(z);
        }
     }
     else initializePort();
@@ -197,11 +218,13 @@ boolean parseData(int data)
             //     }
             // }
         }
+        print("x:" + formatNumber(x) + "  y:"+formatNumber(y) + "  z:"+formatNumber(z)); //print out data!
+        println("  GYRO  x: " + String.valueOf(gyroX) + "\ty: " + String.valueOf(gyroY) + "\tz: " + String.valueOf(gyroZ));
     }
 
     // println("x: "+x+"\t\ty: "+y+"\t\tz: "+z);
-    print("x:" + formatNumber(x) + "  y:"+formatNumber(y) + "  z:"+formatNumber(z)); //print out data!
-    println("  GYRO  x: " + String.valueOf(gyroX) + "\ty: " + String.valueOf(gyroY) + "\tz: " + String.valueOf(gyroZ));
+    // print("x:" + formatNumber(x) + "  y:"+formatNumber(y) + "  z:"+formatNumber(z)); //print out data!
+    // println("  GYRO  x: " + String.valueOf(gyroX) + "\ty: " + String.valueOf(gyroY) + "\tz: " + String.valueOf(gyroZ));
     // println("  Gyro - x:" + formatNumber(gyroX) + "  y:"+formatNumber(gyroY) + "  z:"+formatNumber(gyroZ)); //print out data!
     return true;
 }
