@@ -8,7 +8,7 @@ import ddf.minim.*;
 static final int NUM_SAMPLE = 300;
 static final int IDLE_STATE = 0;
 static final int SPRINT_STATE = 1;
-static final int SPRINT_BOUND = 10000;
+static final int SPRINT_BOUND = 8000;
 static final int TEXT_ROW = 80;
 
 /* Raw Data */
@@ -56,12 +56,11 @@ public AudioPlayer baseSong;
 public AudioPlayer yPositive;
 public AudioPlayer xPositive;
 public AudioPlayer zPositive;
-public String songName = "328366__frankum__electronic-dance-loop-02.mp3";
-
+public String songName = "HELLO+VENUS+-+Wiggle+Wiggle+-+mirrored+dance+practice+video.mp3";
 
 
 void setup() {
-    size(500, 500, OPENGL);
+    size(800, 500, OPENGL);
     textSize(16);
     //Serial Port initilizing
     initializing = true;
@@ -74,9 +73,11 @@ void setup() {
     //Minim initilizing
     minim = new Minim(this);
     baseSong = minim.loadFile("./audio/" + songName);
+    baseSong.setGain(-13);
     xPositive = minim.loadFile("./audio/213507__goup-1__kick.wav");
     yPositive = minim.loadFile("./audio/347625__notembug__deep-house-kick-drum-3.wav");
     zPositive = minim.loadFile("./audio/25666__walter-odington__deep-short-one-snare.wav");
+    zPositive.setGain(0);
 }
 
 public void initializePort() {
@@ -120,6 +121,7 @@ void draw() {
     if (baseSong.isPlaying()) text("Playing: " + songName, 10, 20);
 
     text("x:" + formatNumber(x) + " y:" + formatNumber(y) + " z:" + formatNumber(z), 10, 40);
+    text("Combined R: "+combinedR, 300, 40);
     text("gyro-x:" + gyroX, 10, 60);
     text(" y:" + gyroY, 140, 60);
     text(" z:" + gyroZ, 250, 60);
@@ -201,7 +203,7 @@ boolean parseData(int data)
     }
     if (initializing) //initializing process
     {
-        if (Math.abs(x) + Math.abs(y) < 200)
+        if (Math.abs(x) + Math.abs(y) < 2000)
         {
             // if (numSamples < NUM_SAMPLE)
             // {
@@ -212,9 +214,10 @@ boolean parseData(int data)
             //         averageGravity = sumZ / NUM_SAMPLE;
                     baseSong.play();
                     baseSong.loop(10);
+                    // baseSong.setGain(0);
+                    stateMachine.changeState(IDLE_STATE);
                     initializing = false;
                     println ("DONE INITIALIZING !!!!!!!!!!!!!!");
-                    stateMachine.changeState(IDLE_STATE);
             //     }
             // }
         }
