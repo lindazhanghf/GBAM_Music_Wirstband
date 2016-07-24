@@ -1,0 +1,1 @@
+ ../../processing-java --run --sketch=../gbam --output=./output --force
