@@ -283,9 +283,9 @@ void serialEvent(Serial port)
 }
 
 void initializeAudio() {
-    baseSong.play();
-    baseSong.loop(10);
-    audioEngine = new AudioManipulation(DJ_MODE, track);
+    // baseSong.play();
+    // baseSong.loop(10);
+    audioEngine = new AudioManipulation(DJ_MODE, baseSong, track);
     // if (DJ_MODE) {
     //     for (int i = 0; i < track.length; i++) {
     //         track[i].play();
