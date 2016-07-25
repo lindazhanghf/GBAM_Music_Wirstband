@@ -22,6 +22,14 @@ public class AudioManipulation {
 	    }
 	}
 
+	public String getCurrentModeName() {
+		if (currentMode >= 0)
+			return modes[currentMode].getClass().getName();
+		else {
+			return "";
+		}
+	}
+
 	public int getTrackIndex() {
 		return trackIndex;
 	}
@@ -31,14 +39,16 @@ public class AudioManipulation {
 	}
 
 	public void changeTrack(int index) {
-		stop(track[trackIndex]);
+		if (trackIndex >= 0)
+			stop(track[trackIndex]);
 		trackIndex = index;
 		play(track[trackIndex]);
 	}
 
 	public boolean execute() {
 		if (currentMode >= 0)
-			return modes[currentMode].execute(); // Return false means its still executing in that state, true means changing mode
+			if (trackIndex >= 0)
+				return modes[currentMode].execute(); // Return false means its still executing in that state, true means changing mode
 		return false;
 	}
 

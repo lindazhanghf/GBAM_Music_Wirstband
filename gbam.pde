@@ -188,8 +188,8 @@ void drawDJ() {
         matchResult = matchGesture(gestureBuffer.substring(gestureBuffer.length() - 3));
         if( matchResult != "") gestureBuffer = "";
     }
-    text("Track " + audioEngine.getTrackIndex(), 10, TEXT_ROW);
-    text("Mode " + currentGesture, 10, TEXT_ROW + 20);
+    text("Track " + audioEngine.getTrackIndex()+1, 10, TEXT_ROW);
+    text("Mode " + audioEngine.getCurrentModeName(), 10, TEXT_ROW + 20);
     // text("Beat z", 10, TEXT_ROW + 40);
 
     text("GESTURE MATCH: " + matchResult, 10, TEXT_ROW + 80);
