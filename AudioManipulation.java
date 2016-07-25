@@ -9,17 +9,37 @@ public class AudioManipulation {
 	private Mode[] modes = { new Pan(), new Volume(), new Compression(), new Scratch(), new Pitch(), new Tempo(), new Treble(), new Bass() };
 	private int currentMode = -1;
 	private int trackIndex = -1;
+	private AudioPlayer[] track;
+
+	public AudioManipulation(boolean djMode, AudioPlayer[] globalTrack) {
+		track = globalTrack;
+	    if (djMode) {
+	        for (int i = 0; i < track.length; i++) {
+	            track[i].play();
+	            track[i].loop();
+	            track[i].mute();
+	        }
+	    }
+	}
+
+	public int getTrackIndex() {
+		return trackIndex;
+	}
 
 	public void changeMode(int newMode) {
 		currentMode = newMode;
 	}
 
 	public void changeTrack(int index) {
+		stop(track[trackIndex]);
 		trackIndex = index;
+		play(track[trackIndex]);
 	}
 
 	public boolean execute() {
-		return modes[currentMode].execute(); // Return false means its still executing in that state, true means changing mode
+		if (currentMode >= 0)
+			return modes[currentMode].execute(); // Return false means its still executing in that state, true means changing mode
+		return false;
 	}
 
 	public void play(AudioPlayer audioClip) {

@@ -27,6 +27,25 @@ static final String TRACK_1 = "RDD";
 static final String TRACK_2 = "RDR";
 static final String TRACK_3 = "RDL";
 static final String TRACK_4 = "DRU";
+static final String PAN = "ULU";
+static final String VOL = "URD";
+static final String COMPRESS = "LUR";
+static final String SCRATCH = "LDR";
+static final String PITCH = "LUL";
+static final String TEMPO = "LLU";
+static final String TREB = "LDL";
+static final String BASS = "RUR";
+
+/* Mode index */
+static final int MODE_PAN = 0;
+static final int MODE_VOL = 1;
+static final int MODE_COMPRESS = 2;
+static final int MODE_SCRATCH = 3;
+static final int MODE_PITCH = 4;
+static final int MODE_TEMPO = 5;
+static final int MODE_TREB = 6;
+static final int MODE_BASS = 7;
+
 
 /* Raw Data */
 public long x;
@@ -57,12 +76,13 @@ boolean isAcce;
 boolean initializing;
 
 /* State Machine */
-public AudioManipulation audioEngine = new AudioManipulation();
+public AudioManipulation audioEngine;
 public StateMachine stateMachine = new StateMachine();
 public String  gestureBuffer = "";
 public char currentGesture = 0;
 public char oldGesture = 0;
 public boolean reversed = false;
+public String matchResult = "";
 
 /* Audio Library */
 public Minim minim;
@@ -145,6 +165,9 @@ void draw() {
       int nextState = stateMachine.onExit();
       stateMachine.changeState(nextState);
     }
+
+    audioEngine.execute();
+
     if (!DJ_MODE) track1.setGain((float)mapRange(absSum, 1000, 22000, -20, 0));
 
     /* Display numbers on screen */
@@ -160,7 +183,16 @@ void draw() {
 }
 
 void drawDJ() {
-    text("Gestures: " + gestureBuffer, 10 ,TEXT_ROW + 60);    
+    text("Gestures: " + gestureBuffer, 10 ,TEXT_ROW + 60);
+    if (gestureBuffer.length() >= 3) {
+        matchResult = matchGesture(gestureBuffer.substring(gestureBuffer.length() - 3));
+        if( matchResult != "") gestureBuffer = "";
+    }
+    text("Track " + audioEngine.getTrackIndex(), 10, TEXT_ROW);
+    text("Mode " + currentGesture, 10, TEXT_ROW + 20);
+    // text("Beat z", 10, TEXT_ROW + 40);
+
+    text("GESTURE MATCH: " + matchResult, 10, TEXT_ROW + 80);
 }
 
 void drawDance() {
@@ -171,6 +203,58 @@ void drawDance() {
     if (yPositive.isPlaying()) text("!!!", 80, TEXT_ROW+20);
     if (zPositive.isPlaying()) text("!!!", 80, TEXT_ROW + 40);    
 }
+
+String matchGesture(String gesture) {
+    if  (gesture.compareTo(TRACK_1) == 0){
+        audioEngine.changeTrack(0);
+        return TRACK_1;
+    }
+    else if (gesture.compareTo(TRACK_2) == 0) {
+        audioEngine.changeTrack(1);
+        return TRACK_2;
+    }
+    else if (gesture.compareTo(TRACK_3) == 0) {
+        audioEngine.changeTrack(2);
+        return TRACK_3;
+    }
+    else if (gesture.compareTo(TRACK_4) == 0) {
+        audioEngine.changeTrack(3);
+        return TRACK_4;
+    }
+    else if (gesture.compareTo(PAN) == 0) {
+        audioEngine.changeMode(MODE_PAN);
+        return PAN;
+    }
+    else if (gesture.compareTo(VOL) == 0) {
+        audioEngine.changeMode(MODE_VOL);
+        return VOL;
+    }
+    else if (gesture.compareTo(COMPRESS) == 0) {
+        audioEngine.changeMode(MODE_COMPRESS);
+        return COMPRESS;
+    }
+    else if (gesture.compareTo(SCRATCH) == 0) {
+        audioEngine.changeMode(MODE_SCRATCH);
+        return SCRATCH;
+    }
+    else if (gesture.compareTo(PITCH) == 0) {
+        audioEngine.changeMode(MODE_PITCH);
+        return PITCH;
+    }
+    else if (gesture.compareTo(TEMPO) == 0) {
+        audioEngine.changeMode(MODE_TEMPO);
+        return TEMPO;
+    }    else if (gesture.compareTo(TREB) == 0) {
+        audioEngine.changeMode(MODE_TREB);
+        return TREB;
+    }    else if (gesture.compareTo(BASS) == 0) {
+        audioEngine.changeMode(MODE_BASS);
+        return BASS;
+    }
+    else return "";
+}
+
+
 
 double mapRange(double x, int in_min, int in_max, int out_min, int out_max)
 {
@@ -196,6 +280,25 @@ void serialEvent(Serial port)
        }
     }
     else initializePort();
+}
+
+void initializeAudio() {
+    baseSong.play();
+    baseSong.loop(10);
+    audioEngine = new AudioManipulation(DJ_MODE, track);
+    // if (DJ_MODE) {
+    //     for (int i = 0; i < track.length; i++) {
+    //         track[i].play();
+    //         track[i].loop();
+    //         track[i].mute();
+    //     }
+    // }
+    // else {
+    //     track1.play();
+    //     track1.loop();
+    // }
+    stateMachine.changeState(IDLE_STATE);
+
 }
 
 boolean parseData(int data)
@@ -234,13 +337,7 @@ boolean parseData(int data)
     {
         if (Math.abs(x) + Math.abs(y) < 2000)
         {
-            baseSong.play();
-            baseSong.loop(10);
-            if (!DJ_MODE){
-                track1.play();
-                track1.loop();
-            }
-            stateMachine.changeState(IDLE_STATE);
+            initializeAudio();
             initializing = false;
             println ("DONE INITIALIZING !!!!!!!!!!!!!!");
         }
