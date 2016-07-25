@@ -14,12 +14,19 @@ static final int SPRINT_STATE = 1;
 static final int SPRINT_BOUND = 8000;
 static final int TEXT_ROW = 80;
 
+/* Movement */
 static final char LEFT      = 'L';
 static final char RIGHT     = 'R';
 static final char FORWARD   = 'F';
 static final char BACKWARD  = 'B';
 static final char UP        = 'U';
 static final char DOWN      = 'D';
+
+/* Gestures */
+static final String TRACK_1 = "RDD";
+static final String TRACK_2 = "RDR";
+static final String TRACK_3 = "RDL";
+static final String TRACK_4 = "DRU";
 
 /* Raw Data */
 public long x;
@@ -126,10 +133,8 @@ void draw() {
           oldSeconds = seconds;
           time++;
           print(time + " ");
-          text(String.valueOf(time) + " second", 10, 40);
-          fill(0,0,0);
         }
-        text(String.valueOf(time) + " second", 10, 40);
+        text(time + " second", 10, 40);
         fill(0,0,0);
         return;
     }
@@ -140,7 +145,7 @@ void draw() {
       int nextState = stateMachine.onExit();
       stateMachine.changeState(nextState);
     }
-    track1.setGain((float)mapRange(absSum, 1000, 22000, -20, 0));
+    if (!DJ_MODE) track1.setGain((float)mapRange(absSum, 1000, 22000, -20, 0));
 
     /* Display numbers on screen */
     if (baseSong.isPlaying()) text("Playing: " + songName, 10, 20);
@@ -231,8 +236,10 @@ boolean parseData(int data)
         {
             baseSong.play();
             baseSong.loop(10);
-            track1.play();
-            track1.loop();
+            if (!DJ_MODE){
+                track1.play();
+                track1.loop();
+            }
             stateMachine.changeState(IDLE_STATE);
             initializing = false;
             println ("DONE INITIALIZING !!!!!!!!!!!!!!");
