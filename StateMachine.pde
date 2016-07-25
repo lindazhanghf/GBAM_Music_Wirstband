@@ -7,7 +7,6 @@ import java.lang.String;
 public class StateMachine {
   private State[] states     = { new Idle(), new Sprint() }; // 2. states , new C()
   private int     current    = 0;                            // 3. current State
-  // private char[]  gestureSequence = new char[10];
 
   public void changeState(int newState)
   {
@@ -45,15 +44,15 @@ public class StateMachine {
  class Idle extends State {
    private int nextState;
    public void onEnter(int oldState) { 
-     System.out.println( "IDLE + onEnter" );
+     // System.out.println( "IDLE + onEnter" );
    }
    public int onExit() { 
-     System.out.println( "IDLE + onExit" );
+     // System.out.println( "IDLE + onExit" );
      return nextState;
    }
    public boolean execute() { 
      // R^2 = Rx^2 + Ry^2 + Rz^2 
-     println ("                                                                                     vectorR = " + combinedR + "\tabsAverage     = " + absAverage);
+     // println ("                                                                                     vectorR = " + combinedR + "\tabsAverage     = " + absAverage);
      if (combinedR >= SPRINT_BOUND)
      {
        nextState = SPRINT_STATE;
@@ -67,22 +66,32 @@ public class StateMachine {
    private int nextState;
 
    public void onEnter(int oldState) { 
-     System.out.println( "Sprint + onEnter" );
+     // System.out.println( "Sprint + onEnter" );
+     if (reversed == true) print("Reversed = True\t");
+     else print("Reversed = False");
+     println("\tcurrentGesture = " + currentGesture + "\toldGesture = " + oldGesture);
 
-     String gesture;
      if (oldState == IDLE_STATE)
      {
       if (absMax == absX)
       {
         if (x >= 0) 
         {
-          AudioManipulation.play(xPositive);
-          if (oldGesture == RIGHT) return;
+          audioEngine.play(xPositive);
+          if (!reversed && oldGesture == RIGHT){
+            reversed = true;
+            oldGesture = currentGesture;
+            return;
+          }
           currentGesture = LEFT;
         }
         else 
         {
-          if (oldGesture == LEFT) return;
+          if (!reversed && oldGesture == LEFT){
+            reversed = true;
+            oldGesture = currentGesture;
+            return;
+          }
          currentGesture = RIGHT;
         }
       }
@@ -90,39 +99,57 @@ public class StateMachine {
       {
         if (y >= 0) 
         {
-          AudioManipulation.play(yPositive);
-          if (oldGesture == FORWARD) return;
+          audioEngine.play(yPositive);
+          if (!reversed && oldGesture == FORWARD){
+            reversed = true;
+            oldGesture = currentGesture;
+            return;
+          }
           currentGesture = BACKWARD;
         }
         else
         {
-          if (oldGesture == FORWARD) return;
-          currentGesture = BACKWARD;
+          if (!reversed && oldGesture == BACKWARD){
+            reversed = true;
+            oldGesture = currentGesture;
+            return;
+          }
+          currentGesture = FORWARD;
         }
       }
       else
       {
         if (z >= 0) {
-          AudioManipulation.play(zPositive);
-          if (oldGesture == DOWN) return;
+          audioEngine.play(zPositive);
+          if (!reversed && oldGesture == DOWN){
+            reversed = true;
+            oldGesture = currentGesture;
+            return;
+          }
           currentGesture = UP;
         }
         else
         {
-          if (oldGesture == UP) return;
+          if (!reversed && oldGesture == UP){
+            reversed = true;
+            oldGesture = currentGesture;
+            return;
+          }
           currentGesture = DOWN;
         }
       }
-
-      if (currentGesture != oldGesture) {
+      println("Reversed set to False");
+      if (reversed == true || currentGesture != oldGesture) {
         gestureBuffer += currentGesture;
         oldGesture = currentGesture;
       }
+      reversed = false;
+
     } // old: idle_state
    }
 
    public int onExit() { 
-     System.out.println( "Sprint + onExit" );
+     // System.out.println( "Sprint + onExit" );
      return nextState;
    }
 
@@ -135,6 +162,5 @@ public class StateMachine {
      }
      return false;
    }
-
 
  }

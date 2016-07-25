@@ -5,7 +5,7 @@ import java.lang.String;
 import ddf.minim.*;
 
 /* MODE */
-static final boolean DJ_MODE = true;
+static final boolean DJ_MODE = true; // DJ vs. Dance
 
 /* Macros */
 static final int NUM_SAMPLE = 300;
@@ -50,10 +50,12 @@ boolean isAcce;
 boolean initializing;
 
 /* State Machine */
+public AudioManipulation audioEngine = new AudioManipulation();
 public StateMachine stateMachine = new StateMachine();
 public String  gestureBuffer = "";
 public char currentGesture = 0;
 public char oldGesture = 0;
+public boolean reversed = false;
 
 /* Audio Library */
 public Minim minim;
@@ -62,6 +64,7 @@ public AudioPlayer yPositive;
 public AudioPlayer xPositive;
 public AudioPlayer zPositive;
 public AudioPlayer track1;
+public AudioPlayer[] track = new AudioPlayer[4];
 public String songName = "HELLO+VENUS+-+Wiggle+Wiggle+-+mirrored+dance+practice+video.mp3";
 
 void setup() {
@@ -70,20 +73,34 @@ void setup() {
     //Serial Port initilizing
     initializing = true;
     println(Serial.list());
-    // println("\nINITIALIZING...\nPlease wait for about 30 seconds");
-    port = new Serial(this, "/dev/ttyUSB0", 115200);
-    port.write('r');
+    initializePort();
     seconds = second();
 
     //Minim initilizing
     minim = new Minim(this);
+    if (DJ_MODE) setupDJ();
+    else setupDance();
+
+    setupDance(); //TODO delete after split mode in state machine
+}
+
+void setupDJ() {
+    baseSong = minim.loadFile("./audio/" + songName);
+    baseSong.setGain(-13);
+    track[0] = minim.loadFile("./audio/tracks/115360__ac-verbeck__arp-03.wav");
+    track[1] = minim.loadFile("./audio/tracks/4Minute-Hate.wav");
+    track[2] = minim.loadFile("./audio/tracks/BTS-Dope.wav");
+    track[3] = minim.loadFile("./audio/tracks/MBLAQ-Smoky-Girl.wav");
+}
+
+void setupDance() {
     baseSong = minim.loadFile("./audio/" + songName);
     baseSong.setGain(-13);
     xPositive = minim.loadFile("./audio/213507__goup-1__kick.wav");
     yPositive = minim.loadFile("./audio/347625__notembug__deep-house-kick-drum-3.wav");
     zPositive = minim.loadFile("./audio/25666__walter-odington__deep-short-one-snare.wav");
     zPositive.setGain(0);
-    track1 = minim.loadFile("./audio/track1.wav");
+    track1 = minim.loadFile("./audio/fx-4-Walls-inst.mp3");    
 }
 
 public void initializePort() {
@@ -125,25 +142,29 @@ void draw() {
     }
     track1.setGain((float)mapRange(absSum, 1000, 22000, -20, 0));
 
-
     /* Display numbers on screen */
     if (baseSong.isPlaying()) text("Playing: " + songName, 10, 20);
-
     text("x:" + formatNumber(x) + " y:" + formatNumber(y) + " z:" + formatNumber(z), 10, 40);
     text("Sum: "+absSum, 300, 40);
     text("gyro-x:" + gyroX, 10, 60);
     text(" y:" + gyroY, 140, 60);
     text(" z:" + gyroZ, 250, 60);
+
+    if (DJ_MODE) drawDJ();
+    else drawDance();
+}
+
+void drawDJ() {
+    text("Gestures: " + gestureBuffer, 10 ,TEXT_ROW + 60);    
+}
+
+void drawDance() {
     text("Beat x", 10, TEXT_ROW);
     text("Beat y", 10, TEXT_ROW + 20);
     text("Beat z", 10, TEXT_ROW + 40);
-    text("Gestures: " + gestureBuffer, 10 ,TEXT_ROW + 60);
-
     if (xPositive.isPlaying()) text("!!!", 80, TEXT_ROW);
-
     if (yPositive.isPlaying()) text("!!!", 80, TEXT_ROW+20);
-
-    if (zPositive.isPlaying()) text("!!!", 80, TEXT_ROW + 40);
+    if (zPositive.isPlaying()) text("!!!", 80, TEXT_ROW + 40);    
 }
 
 double mapRange(double x, int in_min, int in_max, int out_min, int out_max)
@@ -220,6 +241,7 @@ boolean parseData(int data)
         println("  GYRO  x: " + String.valueOf(gyroX) + "\ty: " + String.valueOf(gyroY) + "\tz: " + String.valueOf(gyroZ));
     }
 
+    /* Printing data in console */
     // println("x: "+x+"\t\ty: "+y+"\t\tz: "+z);
     // print("x:" + formatNumber(x) + "  y:"+formatNumber(y) + "  z:"+formatNumber(z)); //print out data!
     // println("  GYRO  x: " + String.valueOf(gyroX) + "\ty: " + String.valueOf(gyroY) + "\tz: " + String.valueOf(gyroZ));
