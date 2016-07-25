@@ -6,7 +6,14 @@ import java.lang.String;
 
 public class StateMachine {
   private State[] states     = { new Idle(), new Sprint() }; // 2. states , new C()
-  private int     current    = 0;                             // 3. current State
+  private int     current    = 0;                            // 3. current State
+  // private char[]  gestureSequence = new char[10];
+
+  public void changeState(int newState)
+  {
+    states[newState].onEnter(current);
+    current = newState;
+  }
 
   // 5. All client requests are simply delegated to the current state object
   public void onEnter(int oldState) { 
@@ -17,12 +24,6 @@ public class StateMachine {
   }
   public boolean execute() { 
     return states[current].execute();  
-  }
-
-  public void changeState(int newState)
-  {
-    states[newState].onEnter(current);
-    current = newState;
   }
 }
 
@@ -67,31 +68,57 @@ public class StateMachine {
 
    public void onEnter(int oldState) { 
      System.out.println( "Sprint + onEnter" );
+
+     String gesture;
      if (oldState == IDLE_STATE)
      {
       if (absMax == absX)
       {
-        if (x >= 0) {
+        if (x >= 0) 
+        {
           AudioManipulation.play(xPositive);
-          text("!!!", 80, TEXT_ROW);
+          if (oldGesture == RIGHT) return;
+          currentGesture = LEFT;
+        }
+        else 
+        {
+          if (oldGesture == LEFT) return;
+         currentGesture = RIGHT;
         }
       }
       else if (absMax == absY)
       {
-        if (y >= 0) {
+        if (y >= 0) 
+        {
           AudioManipulation.play(yPositive);
-          text("!!!", 80, TEXT_ROW+20);
+          if (oldGesture == FORWARD) return;
+          currentGesture = BACKWARD;
+        }
+        else
+        {
+          if (oldGesture == FORWARD) return;
+          currentGesture = BACKWARD;
         }
       }
       else
       {
         if (z >= 0) {
           AudioManipulation.play(zPositive);
-          text("!!!", 80, TEXT_ROW + 40);
+          if (oldGesture == DOWN) return;
+          currentGesture = UP;
         }
-        println("else");
+        else
+        {
+          if (oldGesture == UP) return;
+          currentGesture = DOWN;
+        }
       }
-    }
+
+      if (currentGesture != oldGesture) {
+        gestureBuffer += currentGesture;
+        oldGesture = currentGesture;
+      }
+    } // old: idle_state
    }
 
    public int onExit() { 
@@ -103,12 +130,11 @@ public class StateMachine {
      // println ("Sprint: vectorR = " + combinedR + "\tabsAverage     = " + absAverage);
      if (combinedR < SPRINT_BOUND)
      {
-      // AudioManipulation.stop(kick);
-      // AudioManipulation.stop(kick1);
       nextState = IDLE_STATE;
       return true;
      }
      return false;
    }
+
 
  }

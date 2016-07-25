@@ -4,12 +4,22 @@ import java.util.Scanner;
 import java.lang.String;
 import ddf.minim.*;
 
+/* MODE */
+static final boolean DJ_MODE = true;
+
 /* Macros */
 static final int NUM_SAMPLE = 300;
 static final int IDLE_STATE = 0;
 static final int SPRINT_STATE = 1;
 static final int SPRINT_BOUND = 8000;
 static final int TEXT_ROW = 80;
+
+static final char LEFT      = 'L';
+static final char RIGHT     = 'R';
+static final char FORWARD   = 'F';
+static final char BACKWARD  = 'B';
+static final char UP        = 'U';
+static final char DOWN      = 'D';
 
 /* Raw Data */
 public long x;
@@ -20,6 +30,7 @@ public double gyroY;
 public double gyroZ;
 public double combinedR;
 public double absAverage;
+public long absSum;
 public int absMax;
 public int absX;
 public int absY;
@@ -28,12 +39,6 @@ public int absZ;
 /* Serial port and Initialization */
 Serial port;
 int interval = 0;
-// int synced = 0;
-// float[] q = new float[4];
-// Quaternion quat = new Quaternion(1, 0, 0, 0);
-// float[] gravity = new float[3];
-// float[] euler = new float[3];
-// float[] ypr = new float[3];
 int time = 0;
 int seconds = 0;
 int oldSeconds = 0;
@@ -43,12 +48,12 @@ boolean isAcce;
 
 /* Initilization stuff */
 boolean initializing;
-int numSamples = 0;
-int sumZ = 0;
-int averageGravity = 0;
 
 /* State Machine */
 public StateMachine stateMachine = new StateMachine();
+public String  gestureBuffer = "";
+public char currentGesture = 0;
+public char oldGesture = 0;
 
 /* Audio Library */
 public Minim minim;
@@ -56,8 +61,8 @@ public AudioPlayer baseSong;
 public AudioPlayer yPositive;
 public AudioPlayer xPositive;
 public AudioPlayer zPositive;
+public AudioPlayer track1;
 public String songName = "HELLO+VENUS+-+Wiggle+Wiggle+-+mirrored+dance+practice+video.mp3";
-
 
 void setup() {
     size(800, 500, OPENGL);
@@ -78,6 +83,7 @@ void setup() {
     yPositive = minim.loadFile("./audio/347625__notembug__deep-house-kick-drum-3.wav");
     zPositive = minim.loadFile("./audio/25666__walter-odington__deep-short-one-snare.wav");
     zPositive.setGain(0);
+    track1 = minim.loadFile("./audio/track1.wav");
 }
 
 public void initializePort() {
@@ -117,36 +123,32 @@ void draw() {
       int nextState = stateMachine.onExit();
       stateMachine.changeState(nextState);
     }
+    track1.setGain((float)mapRange(absSum, 1000, 22000, -20, 0));
 
+
+    /* Display numbers on screen */
     if (baseSong.isPlaying()) text("Playing: " + songName, 10, 20);
 
     text("x:" + formatNumber(x) + " y:" + formatNumber(y) + " z:" + formatNumber(z), 10, 40);
-    text("Combined R: "+combinedR, 300, 40);
+    text("Sum: "+absSum, 300, 40);
     text("gyro-x:" + gyroX, 10, 60);
     text(" y:" + gyroY, 140, 60);
     text(" z:" + gyroZ, 250, 60);
     text("Beat x", 10, TEXT_ROW);
     text("Beat y", 10, TEXT_ROW + 20);
     text("Beat z", 10, TEXT_ROW + 40);
+    text("Gestures: " + gestureBuffer, 10 ,TEXT_ROW + 60);
 
     if (xPositive.isPlaying()) text("!!!", 80, TEXT_ROW);
 
     if (yPositive.isPlaying()) text("!!!", 80, TEXT_ROW+20);
 
     if (zPositive.isPlaying()) text("!!!", 80, TEXT_ROW + 40);
-    // if (millis() - interval > 2000) {
-    //     // resend single character to trigger DMP init/start
-    //     // in case the MPU is halted/reset while applet is running
-    //     port = new Serial(this, "/dev/ttyUSB0", 115200);
-    // }
-    // try {
-    //     serialEvent(port);
-    // }
-    // catch (java.lang.RuntimeException e) {
-    //     println(e);
-    //     initializePort();
-    // }
+}
 
+double mapRange(double x, int in_min, int in_max, int out_min, int out_max)
+{
+ return (x - in_min) * (out_max - out_min) / (in_max - in_min) + out_min;
 }
 
 void serialEvent(Serial port)
@@ -159,7 +161,8 @@ void serialEvent(Serial port)
             /* Update all data once received new x,y,z data */
             // R^2 = Rx^2 + Ry^2 + Rz^2 
             combinedR = Math.sqrt(Math.pow(x,2)+Math.pow(y,2)+Math.pow(z,2));
-            absAverage = (Math.abs(x) + Math.abs(y) + Math.abs(z))/3.0;
+            absSum = Math.abs(x) + Math.abs(y) + Math.abs(z);
+            absAverage = absSum/3.0;
             absMax = (int) Math.max(Math.abs(x),  Math.max(Math.abs(y), Math.abs(z)));
             absX = (int) Math.abs(x);
             absY = (int) Math.abs(y);
@@ -205,21 +208,13 @@ boolean parseData(int data)
     {
         if (Math.abs(x) + Math.abs(y) < 2000)
         {
-            // if (numSamples < NUM_SAMPLE)
-            // {
-            //     sumZ += z;
-            //     numSamples++;
-            //     if (numSamples == NUM_SAMPLE)
-            //     {
-            //         averageGravity = sumZ / NUM_SAMPLE;
-                    baseSong.play();
-                    baseSong.loop(10);
-                    // baseSong.setGain(0);
-                    stateMachine.changeState(IDLE_STATE);
-                    initializing = false;
-                    println ("DONE INITIALIZING !!!!!!!!!!!!!!");
-            //     }
-            // }
+            baseSong.play();
+            baseSong.loop(10);
+            track1.play();
+            track1.loop();
+            stateMachine.changeState(IDLE_STATE);
+            initializing = false;
+            println ("DONE INITIALIZING !!!!!!!!!!!!!!");
         }
         print("x:" + formatNumber(x) + "  y:"+formatNumber(y) + "  z:"+formatNumber(z)); //print out data!
         println("  GYRO  x: " + String.valueOf(gyroX) + "\ty: " + String.valueOf(gyroY) + "\tz: " + String.valueOf(gyroZ));

@@ -2,6 +2,11 @@ import ddf.minim.*;
 
 public class AudioManipulation {
 
+	public int gestureMatch(String buffer) {
+
+		return 0;
+	}
+
 	public static void play(AudioPlayer audioClip) {
 		audioClip.rewind();
 		if (!audioClip.isPlaying() )
