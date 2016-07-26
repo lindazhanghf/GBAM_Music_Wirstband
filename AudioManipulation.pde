@@ -3,6 +3,8 @@
     https://sourcemaking.com/design_patterns/state/java/5
 */
 import ddf.minim.*;
+// import ddf.minim.spi.*; // for AudioRecordingStream
+import ddf.minim.ugens.*;
 
 public class AudioManipulation {
 
@@ -16,6 +18,8 @@ public class AudioManipulation {
 	}
 
 	public void changeMode(int newMode) {
+		modes[currentMode].onExit();
+		modes[newMode].onEnter();
 		currentMode = newMode;
 	}
 
@@ -67,8 +71,12 @@ public class AudioManipulation {
 }
 
 abstract class Mode {
+	public void onEnter(){};
+
+	public void onExit(){};
+
 	public boolean execute() { 
-		System.out.println( "error" );
+		System.out.println(audioEngine.getCurrentModeName() + " not implemented" );
 		return false;
 	}
 }
@@ -143,9 +151,19 @@ class Pitch extends Mode {
 }
 
 class Tempo extends Mode {
-	public boolean execute() { 
-		return false;
-	}
+	// private TickRate rateControl = new TickRate(1.f);
+	// private AudioOutput out = minim.getLineOut();
+
+	// public void onEnter() {
+	// 	track[trackIndex].patch(rateControl).patch(out);
+	// 	rateControl.setInterpolation( true );		
+	// }
+
+	// public boolean execute() {
+	// 	float rate =  map(x, -3000, 3000, 0.0f, 3.f);
+	// 	rateControl.value.setLastValue(rate);
+	// 	return false;
+	// }
 }
 
 class Treble extends Mode {
