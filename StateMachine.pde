@@ -67,9 +67,9 @@ public class StateMachine {
 
    public void onEnter(int oldState) { 
      // System.out.println( "Sprint + onEnter" );
-     if (reversed == true) print("Reversed = True\t");
-     else print("Reversed = False");
-     println("\tcurrentGesture = " + currentGesture + "\toldGesture = " + oldGesture);
+     // if (reversed == true) print("Reversed = True\t");
+     // else print("Reversed = False");
+     // println("\tcurrentGesture = " + currentGesture + "\toldGesture = " + oldGesture);
 
      if (oldState == IDLE_STATE)
      {
@@ -77,7 +77,7 @@ public class StateMachine {
       {
         if (x >= 0) 
         {
-          audioEngine.play(xPositive);
+          if(!DJ_MODE) audioEngine.play(xPositive);
           if (!reversed && oldGesture == RIGHT){
             reversed = true;
             oldGesture = currentGesture;
@@ -99,7 +99,7 @@ public class StateMachine {
       {
         if (y >= 0) 
         {
-          audioEngine.play(yPositive);
+          if(!DJ_MODE) audioEngine.play(yPositive);
           if (!reversed && oldGesture == FORWARD){
             reversed = true;
             oldGesture = currentGesture;
@@ -120,7 +120,7 @@ public class StateMachine {
       else
       {
         if (z >= 0) {
-          audioEngine.play(zPositive);
+          if(!DJ_MODE) audioEngine.play(zPositive);
           if (!reversed && oldGesture == DOWN){
             reversed = true;
             oldGesture = currentGesture;
@@ -138,7 +138,7 @@ public class StateMachine {
           currentGesture = DOWN;
         }
       }
-      println("Reversed set to False");
+      // println("Reversed set to False");
       if (reversed == true || currentGesture != oldGesture) {
         gestureBuffer += currentGesture;
         oldGesture = currentGesture;

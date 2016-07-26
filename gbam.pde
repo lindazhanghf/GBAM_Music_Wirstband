@@ -5,13 +5,13 @@ import java.lang.String;
 import ddf.minim.*;
 
 /* MODE */
-static final boolean DJ_MODE = true; // DJ vs. Dance
+static final boolean DJ_MODE = false; // DJ vs. Dance
 
 /* Macros */
 static final int NUM_SAMPLE = 300;
 static final int IDLE_STATE = 0;
 static final int SPRINT_STATE = 1;
-static final int SPRINT_BOUND = 8000;
+static final int SPRINT_BOUND = 6000;
 static final int TEXT_ROW = 80;
 
 /* Movement */
@@ -74,6 +74,9 @@ boolean isAcce;
 
 /* Initilization stuff */
 boolean initializing;
+int numSamples = 0;
+int sumZ = 0;
+int averageGravity = 0;
 
 /* State Machine */
 public AudioManipulation audioEngine;
@@ -92,7 +95,7 @@ public AudioPlayer xPositive;
 public AudioPlayer zPositive;
 public AudioPlayer track1;
 public AudioPlayer[] track = new AudioPlayer[4];
-public String songName = "HELLO+VENUS+-+Wiggle+Wiggle+-+mirrored+dance+practice+video.mp3";
+public String songName = "fx-4-Walls-inst";
 
 void setup() {
     size(800, 500, OPENGL);
@@ -112,7 +115,7 @@ void setup() {
 }
 
 void setupDJ() {
-    baseSong = minim.loadFile("./audio/" + songName);
+    baseSong = minim.loadFile("./audio/" + songName + ".mp3");
     baseSong.setGain(-13);
     track[0] = minim.loadFile("./audio/tracks/115360__ac-verbeck__arp-03.wav");
     track[1] = minim.loadFile("./audio/tracks/4Minute-Hate.wav");
@@ -127,11 +130,11 @@ void setupDance() {
     yPositive = minim.loadFile("./audio/347625__notembug__deep-house-kick-drum-3.wav");
     zPositive = minim.loadFile("./audio/25666__walter-odington__deep-short-one-snare.wav");
     zPositive.setGain(0);
-    track1 = minim.loadFile("./audio/fx-4-Walls-inst.mp3");    
+    track1 = minim.loadFile("./audio/fx-4-Walls.mp3");    
 }
 
 public void initializePort() {
-    port = new Serial(this, "/dev/ttyUSB0", 115200);
+    port = new Serial(this, "/dev/ttyACM0", 115200);
     port.write('r');    
 }
 
@@ -145,7 +148,7 @@ void draw() {
     }
     if (initializing)
     {
-        text("INITIALIZING... Please wait for about 30 seconds", 10, 20);
+        text("INITIALIZING... Please wait for about 10 seconds", 10, 20);
         fill(0,0,0);
         seconds = second();
         if (seconds != oldSeconds)
@@ -168,7 +171,7 @@ void draw() {
 
     audioEngine.execute();
 
-    if (!DJ_MODE) track1.setGain((float)mapRange(absSum, 1000, 22000, -20, 0));
+    if (!DJ_MODE) track1.setGain((float)mapRange(absSum, 1000, 22000, -10, 10));
 
     /* Display numbers on screen */
     if (baseSong.isPlaying()) text("Playing: " + songName, 10, 20);
@@ -283,20 +286,20 @@ void serialEvent(Serial port)
 }
 
 void initializeAudio() {
-    // baseSong.play();
-    // baseSong.loop(10);
-    audioEngine = new AudioManipulation(DJ_MODE, baseSong, track);
-    // if (DJ_MODE) {
-    //     for (int i = 0; i < track.length; i++) {
-    //         track[i].play();
-    //         track[i].loop();
-    //         track[i].mute();
-    //     }
-    // }
-    // else {
-    //     track1.play();
-    //     track1.loop();
-    // }
+    audioEngine = new AudioManipulation();
+    baseSong.play();
+    baseSong.loop(10);
+    if (DJ_MODE) {
+        for (int i = 0; i < track.length; i++) {
+            track[i].play();
+            track[i].loop();
+            track[i].mute();
+        }
+    }
+    else {
+        track1.play();
+        track1.loop();
+    }
     stateMachine.changeState(IDLE_STATE);
 
 }
@@ -325,7 +328,7 @@ boolean parseData(int data)
             Scanner s = new Scanner(acceBuffer).useDelimiter("\t");
             x = s.nextInt();
             y = s.nextInt();
-            z = s.nextInt();
+            z = s.nextInt() - averageGravity;
             s.close();
             break;
         default :
@@ -337,9 +340,18 @@ boolean parseData(int data)
     {
         if (Math.abs(x) + Math.abs(y) < 2000)
         {
-            initializeAudio();
-            initializing = false;
-            println ("DONE INITIALIZING !!!!!!!!!!!!!!");
+            if (numSamples < NUM_SAMPLE)
+            {
+                sumZ += z;
+                numSamples++;
+                if (numSamples == NUM_SAMPLE)
+                {
+                    averageGravity = sumZ / NUM_SAMPLE;
+                    initializing = false;
+                    initializeAudio();
+                    println ("DONE INITIALIZING !!!!!!!!!!!!!!");
+                }
+            }
         }
         print("x:" + formatNumber(x) + "  y:"+formatNumber(y) + "  z:"+formatNumber(z)); //print out data!
         println("  GYRO  x: " + String.valueOf(gyroX) + "\ty: " + String.valueOf(gyroY) + "\tz: " + String.valueOf(gyroZ));

@@ -9,22 +9,6 @@ public class AudioManipulation {
 	private Mode[] modes = { new Pan(), new Volume(), new Compression(), new Scratch(), new Pitch(), new Tempo(), new Treble(), new Bass() };
 	private int currentMode = -1;
 	private int trackIndex = -1;
-	private AudioPlayer baseSong;
-	private AudioPlayer[] track;
-	private boolean djMode;
-
-	public AudioManipulation(boolean djMode, AudioPlayer baseSong, AudioPlayer[] track) {
-		// this.baseSong = baseSong;
-		// this.track = track;
-		// this.djMode = djMode;
-	    if (DJ_MODE) {
-	        for (int i = 0; i < track.length; i++) {
-	            track[i].play();
-	            track[i].loop();
-	            track[i].mute();
-	        }
-	    }
-	}
 
 	public String getCurrentModeName() {
 		if (currentMode >= 0)
@@ -57,7 +41,7 @@ public class AudioManipulation {
 	}
 
 	public void play(AudioPlayer audioClip) {
-		if(!djMode) audioClip.rewind();
+		if(!DJ_MODE) audioClip.rewind();
 
 		if (!audioClip.isPlaying() )
 			audioClip.play();
@@ -66,7 +50,7 @@ public class AudioManipulation {
 	}
 
 	public void stop(AudioPlayer audioClip) {
-		if (djMode)
+		if (DJ_MODE)
 			audioClip.mute();
 		else {
 			if (audioClip.isPlaying()) {
