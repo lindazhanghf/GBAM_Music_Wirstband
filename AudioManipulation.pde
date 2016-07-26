@@ -94,7 +94,44 @@ class Compression extends Mode {
 }
 
 class Scratch extends Mode {
-	public boolean execute() { 
+	public boolean execute() {
+		if (Math.abs(x) < 600) return false; // noise
+		int scratchAmount = (int) Math.abs(x)/10;
+		if (x > 0) // scratch forward
+		{ 
+			// get the current position of the baseSong
+			int pos = track[trackIndex].position();
+			// if the baseSong's position is more than 40 milliseconds from the end of the baseSong
+			if ( pos < track[trackIndex].length() - 40 )
+			{
+			// forward the baseSong by 40 milliseconds
+				track[trackIndex].skip(40);
+			}
+			else
+			{
+			// otherwise, cue the baseSong at the end of the baseSong
+				track[trackIndex].cue( track[trackIndex].length() );
+			}
+			// start the baseSong playing
+			track[trackIndex].play();
+		}
+		else //scratch backward (rewind)
+		{
+			// get the current baseSong position
+			int pos = track[trackIndex].position();
+			// if it greater than scratchAmount milliseconds
+			if ( pos > scratchAmount )
+			{
+			// rewind the baseSong by scratchAmount milliseconds
+				track[trackIndex].skip(-scratchAmount);
+			}
+			else
+			{
+			// if the baseSong hasn't played more than 100 milliseconds
+			// just rewind to the beginning
+				track[trackIndex].rewind();
+			}
+		}
 		return false;
 	}
 }

@@ -162,9 +162,7 @@ public void initializePort() {
     } catch (Exception e) {
         println("error:\n" + e);
         port = new Serial(this, "/dev/ttyACM0", 115200);
-    } finally {
     }
-    // port = new Serial(this, portName, 115200);
     port.write('r');    
 }
 
