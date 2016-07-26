@@ -32,7 +32,7 @@ static final String VOL = "DRU";
 static final String COMPRESS = "RUL";
 static final String SCRATCH = "LUR";
 static final String PITCH = "URU";
-static final String TEMPO = "DRD";
+static final String TEMPO = "RRD";
 static final String TREB = "LDL";
 static final String BASS = "RUR";
 
@@ -64,7 +64,6 @@ public int absZ;
 
 /* Serial port and Initialization */
 Serial port;
-String portName = "/dev/ttyACM1";
 int interval = 0;
 int time = 0;
 int seconds = 0;
@@ -90,6 +89,10 @@ public String matchResult = "";
 
 /* Audio Library */
 public Minim minim;
+// public AudioOutput out;
+public SineWave sine;
+public SineWave sine2;
+
 public AudioPlayer baseSong;
 public AudioPlayer yPositive;
 public AudioPlayer xPositive;
@@ -97,7 +100,7 @@ public AudioPlayer zPositive;
 public AudioPlayer track1;
 public AudioPlayer[] track = new AudioPlayer[4];
 public int trackIndex = -1; // no track selected
-public String songName = "BIGBANG(BANG_BANG_BANG)_(Official_Instrumental).mp3";
+public String songName;
 
 void setup() {
     size(800, 500, OPENGL);
@@ -116,26 +119,30 @@ void setup() {
     if (DJ_MODE) setupDJ();
     else setupFree();
 
-    setupFree(); //TODO delete after split mode in state machine
+    // setupFree(); //TODO delete after split mode in state machine
 }
 
 void setupDJ() {
-    baseSong = minim.loadFile("./audio/" + songName);
+    baseSong = minim.loadFile("./audio/BIGBANG(BANG_BANG_BANG)_(Official_Instrumental).mp3"); //Put you base song here);
     baseSong.setGain(-13);
-    track[0] = minim.loadFile("./audio/tracks/115360__ac-verbeck__arp-03.wav");
+    track[0] = minim.loadFile("./audio/tracks/115360__ac-verbeck__arp-03.wav"); //Put the 4 tracks you want to mix here
     track[1] = minim.loadFile("./audio/tracks/4Minute-Hate.wav");
     track[2] = minim.loadFile("./audio/tracks/BTS-Dope.wav");
     track[3] = minim.loadFile("./audio/tracks/MBLAQ-Smoky-Girl.wav");
+
+    // sine = new SineWave(440, 0.5, out.sampleRate());
+    // sine2 = new SineWave(440, 0.5, out.sampleRate());
 }
 
 void setupFree() {
-    baseSong = minim.loadFile("./audio/" + songName);
+    baseSong = minim.loadFile("./audio/fx-4-Walls-inst.mp3"); //Put you base song here);
+    track1 = minim.loadFile("./audio/fx-4-Walls.mp3"); // Put the track you want to mix here, volume controlled by the speed of your movement
+    // track1 = minim.loadFile("./audio/track1.wav"); //Alternative track
     baseSong.setGain(-13);
     xPositive = minim.loadFile("./audio/213507__goup-1__kick.wav");
     yPositive = minim.loadFile("./audio/347625__notembug__deep-house-kick-drum-3.wav");
-    zPositive = minim.loadFile("./audio/25666__walter-odington__deep-short-one-snare.wav");
+    zPositive = minim.loadFile("./audio/25666__walter-odington__deep-short-one-snare.wav"); // Put the beat/kicks you want to add here
     zPositive.setGain(0);
-    track1 = minim.loadFile("./audio/BIGBANG(BANG_BANG_BANG)M-V.mp3");    
 }
 
 void initializeAudio() {
@@ -158,10 +165,10 @@ void initializeAudio() {
 
 public void initializePort() {
     try {
-        port = new Serial(this, portName, 115200);
+        port = new Serial(this, "/dev/ttyACM0", 115200);
     } catch (Exception e) {
         println("error:\n" + e);
-        port = new Serial(this, "/dev/ttyACM0", 115200);
+        port = new Serial(this, "/dev/ttyACM1", 115200);
     }
     port.write('r');    
 }

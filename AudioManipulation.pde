@@ -5,6 +5,7 @@
 import ddf.minim.*;
 // import ddf.minim.spi.*; // for AudioRecordingStream
 import ddf.minim.ugens.*;
+import ddf.minim.signals.*;
 
 public class AudioManipulation {
 
@@ -12,13 +13,17 @@ public class AudioManipulation {
 	private int currentMode = -1;
 	private char lastGesture = 0;
 
+	public int getCurrentMode() {
+		return currentMode;
+	}
+
 	public String getCurrentModeName() {
 		if (currentMode >= 0) return modes[currentMode].getClass().getName();
 		else return "";
 	}
 
 	public void changeMode(int newMode) {
-		modes[currentMode].onExit();
+		if (currentMode > 0) modes[currentMode].onExit();
 		modes[newMode].onEnter();
 		currentMode = newMode;
 	}
@@ -83,14 +88,20 @@ abstract class Mode {
 
 class Pan extends Mode {
 	public boolean execute() { 
-		track[trackIndex].setPan((float)mapRange(x, -3000, 3000, -1, 1));           
+		if (trackIndex >= 0)
+			track[trackIndex].setPan((float)mapRange(x, -3000, 3000, -1, 1));           
+		else 
+			baseSong.setPan((float)mapRange(x, -3000, 3000, -1, 1));
 		return false;
 	}
 }
 
 class Volume extends Mode {
 	public boolean execute() { 
-		track[trackIndex].setGain((float)mapRange(-z, -3000, 3000, -25, 5));
+		if (trackIndex >= 0)
+			track[trackIndex].setGain((float)mapRange(-z, -3000, 3000, -25, 5));
+		else
+			baseSong.setGain((float)mapRange(-z, -3000, 3000, -25, 5));
 		return false;
 	}
 }
@@ -102,42 +113,50 @@ class Compression extends Mode {
 }
 
 class Scratch extends Mode {
+	private AudioPlayer audioClip;
+
+	public void onEnter() {
+		audioClip = baseSong;
+		if (trackIndex >= 0) audioClip = track[trackIndex];
+
+	}
+
 	public boolean execute() {
 		if (Math.abs(x) < 600) return false; // noise
 		int scratchAmount = (int) Math.abs(x)/10;
 		if (x > 0) // scratch forward
 		{ 
 			// get the current position of the baseSong
-			int pos = track[trackIndex].position();
+			int pos = audioClip.position();
 			// if the baseSong's position is more than 40 milliseconds from the end of the baseSong
-			if ( pos < track[trackIndex].length() - 40 )
+			if ( pos < audioClip.length() - scratchAmount )
 			{
-			// forward the baseSong by 40 milliseconds
-				track[trackIndex].skip(40);
+			// forward the baseSong by scratchAmount milliseconds
+				audioClip.skip(scratchAmount);
 			}
 			else
 			{
 			// otherwise, cue the baseSong at the end of the baseSong
-				track[trackIndex].cue( track[trackIndex].length() );
+				audioClip.cue( audioClip.length() );
 			}
 			// start the baseSong playing
-			track[trackIndex].play();
+			audioClip.play();
 		}
 		else //scratch backward (rewind)
 		{
 			// get the current baseSong position
-			int pos = track[trackIndex].position();
+			int pos = audioClip.position();
 			// if it greater than scratchAmount milliseconds
 			if ( pos > scratchAmount )
 			{
 			// rewind the baseSong by scratchAmount milliseconds
-				track[trackIndex].skip(-scratchAmount);
+				audioClip.skip(-scratchAmount);
 			}
 			else
 			{
 			// if the baseSong hasn't played more than 100 milliseconds
 			// just rewind to the beginning
-				track[trackIndex].rewind();
+				audioClip.rewind();
 			}
 		}
 		return false;
@@ -145,15 +164,30 @@ class Scratch extends Mode {
 }
 
 class Pitch extends Mode {
-	public boolean execute() { 
-		return false;
-	}
+	// public void onEnter() {
+	// 	int amount = (int) mapRange(-z, -3000, 3000, 0, 300);
+
+	//     sine.portamento(amount);
+	//     sine2.portamento(amount);
+	//     out.addSignal(sine);
+	//     out.addSignal(sine2);
+	// }
+
+	// public boolean execute() { 
+	// 	int amount = (int) mapRange(-z, -3000, 3000, 0, 300);
+
+	//     sine.portamento(amount);
+	//     sine2.portamento(amount);
+	// 	return false;
+	// }
+
+	// public void onExit() {
+	//     sine.portamento(0);
+	//     sine2.portamento(0);
+	// }
 }
 
 class Tempo extends Mode {
-	// private TickRate rateControl = new TickRate(1.f);
-	// private AudioOutput out = minim.getLineOut();
-
 	// public void onEnter() {
 	// 	track[trackIndex].patch(rateControl).patch(out);
 	// 	rateControl.setInterpolation( true );		
