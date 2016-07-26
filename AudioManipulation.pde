@@ -8,32 +8,37 @@ public class AudioManipulation {
 
 	private Mode[] modes = { new Pan(), new Volume(), new Compression(), new Scratch(), new Pitch(), new Tempo(), new Treble(), new Bass() };
 	private int currentMode = -1;
-	private int trackIndex = -1;
+	private char lastGesture = 0;
 
 	public String getCurrentModeName() {
-		if (currentMode >= 0)
-			return modes[currentMode].getClass().getName();
-		else {
-			return "";
-		}
-	}
-
-	public int getTrackIndex() {
-		return trackIndex;
+		if (currentMode >= 0) return modes[currentMode].getClass().getName();
+		else return "";
 	}
 
 	public void changeMode(int newMode) {
 		currentMode = newMode;
 	}
 
-	public void changeTrack(int index) {
-		// if (trackIndex >= 0)
-		// 	stop(track[trackIndex]);
-		trackIndex = index;
-		// play(track[trackIndex]);
-	}
-
 	public boolean execute() {
+		if (gestureBuffer.length() > 0 && gestureBuffer.charAt(gestureBuffer.length()-1) == FORWARD) {
+			gestureBuffer = "";
+			if (trackIndex >= 0) {
+				if (track[trackIndex].isMuted()) track[trackIndex].unmute();
+			}
+		}
+		else if (gestureBuffer.length() > 0 && gestureBuffer.charAt(gestureBuffer.length()-1) == BACKWARD) {
+			gestureBuffer = "";
+			if (currentMode >= 0) {
+				currentMode = -1;
+				return false;
+			}
+			else {
+				if (trackIndex >= 0) {
+					if (!track[trackIndex].isMuted()) track[trackIndex].mute();				
+				}
+			}
+		}
+
 		if (currentMode >= 0)
 			if (trackIndex >= 0)
 				return modes[currentMode].execute(); // Return false means its still executing in that state, true means changing mode
@@ -59,9 +64,6 @@ public class AudioManipulation {
 			audioClip.rewind();
 		}
 	}
-
-	public void Reverb(AudioPlayer audioClip) {
-	}
 }
 
 abstract class Mode {
@@ -73,13 +75,14 @@ abstract class Mode {
 
 class Pan extends Mode {
 	public boolean execute() { 
-		print(x+y+z);
+		track[trackIndex].setPan((float)mapRange(x, -3000, 3000, -1, 1));           
 		return false;
 	}
 }
 
 class Volume extends Mode {
 	public boolean execute() { 
+		track[trackIndex].setGain((float)mapRange(-z, -3000, 3000, -25, 5));
 		return false;
 	}
 }

@@ -5,7 +5,7 @@ import java.lang.String;
 import ddf.minim.*;
 
 /* MODE */
-static final boolean DJ_MODE = false; // DJ vs. Dance
+static final boolean DJ_MODE = true; // DJ Mode vs. Free Mode
 
 /* Macros */
 static final int NUM_SAMPLE = 300;
@@ -26,13 +26,13 @@ static final char DOWN      = 'D';
 static final String TRACK_1 = "RDD";
 static final String TRACK_2 = "RDR";
 static final String TRACK_3 = "RDL";
-static final String TRACK_4 = "DRU";
-static final String PAN = "ULU";
-static final String VOL = "URD";
-static final String COMPRESS = "LUR";
-static final String SCRATCH = "LDR";
-static final String PITCH = "LUL";
-static final String TEMPO = "LLU";
+static final String TRACK_4 = "DRD";
+static final String PAN = "URD";
+static final String VOL = "DRU";
+static final String COMPRESS = "RUL";
+static final String SCRATCH = "LUR";
+static final String PITCH = "URU";
+static final String TEMPO = "DRD";
 static final String TREB = "LDL";
 static final String BASS = "RUR";
 
@@ -64,6 +64,7 @@ public int absZ;
 
 /* Serial port and Initialization */
 Serial port;
+String portName = "/dev/ttyACM1";
 int interval = 0;
 int time = 0;
 int seconds = 0;
@@ -73,13 +74,13 @@ String gyroBuffer;
 boolean isAcce;
 
 /* Initilization stuff */
-boolean initializing;
+boolean initializing = true;
 int numSamples = 0;
 int sumZ = 0;
 int averageGravity = 0;
 
 /* State Machine */
-public AudioManipulation audioEngine;
+public AudioManipulation audioEngine = new AudioManipulation();
 public StateMachine stateMachine = new StateMachine();
 public String  gestureBuffer = "";
 public char currentGesture = 0;
@@ -95,27 +96,31 @@ public AudioPlayer xPositive;
 public AudioPlayer zPositive;
 public AudioPlayer track1;
 public AudioPlayer[] track = new AudioPlayer[4];
-public String songName = "fx-4-Walls-inst";
+public int trackIndex = -1; // no track selected
+public String songName = "BIGBANG(BANG_BANG_BANG)_(Official_Instrumental).mp3";
 
 void setup() {
     size(800, 500, OPENGL);
     textSize(16);
     //Serial Port initilizing
-    initializing = true;
-    println(Serial.list());
-    initializePort();
+    if (initializing) 
+    {
+        println(Serial.list());
+        initializePort();
+    }
+    else initializeAudio();
     seconds = second();
 
     //Minim initilizing
     minim = new Minim(this);
     if (DJ_MODE) setupDJ();
-    else setupDance();
+    else setupFree();
 
-    setupDance(); //TODO delete after split mode in state machine
+    setupFree(); //TODO delete after split mode in state machine
 }
 
 void setupDJ() {
-    baseSong = minim.loadFile("./audio/" + songName + ".mp3");
+    baseSong = minim.loadFile("./audio/" + songName);
     baseSong.setGain(-13);
     track[0] = minim.loadFile("./audio/tracks/115360__ac-verbeck__arp-03.wav");
     track[1] = minim.loadFile("./audio/tracks/4Minute-Hate.wav");
@@ -123,18 +128,43 @@ void setupDJ() {
     track[3] = minim.loadFile("./audio/tracks/MBLAQ-Smoky-Girl.wav");
 }
 
-void setupDance() {
+void setupFree() {
     baseSong = minim.loadFile("./audio/" + songName);
     baseSong.setGain(-13);
     xPositive = minim.loadFile("./audio/213507__goup-1__kick.wav");
     yPositive = minim.loadFile("./audio/347625__notembug__deep-house-kick-drum-3.wav");
     zPositive = minim.loadFile("./audio/25666__walter-odington__deep-short-one-snare.wav");
     zPositive.setGain(0);
-    track1 = minim.loadFile("./audio/fx-4-Walls.mp3");    
+    track1 = minim.loadFile("./audio/BIGBANG(BANG_BANG_BANG)M-V.mp3");    
+}
+
+void initializeAudio() {
+    stateMachine.changeState(IDLE_STATE);
+
+    baseSong.play();
+    baseSong.loop(10);
+    if (DJ_MODE) {
+        for (int i = 0; i < track.length; i++) {
+            track[i].play();
+            track[i].loop();
+            track[i].mute();
+        }
+    }
+    else {
+        track1.play();
+        track1.loop();
+    }
 }
 
 public void initializePort() {
-    port = new Serial(this, "/dev/ttyACM0", 115200);
+    try {
+        port = new Serial(this, portName, 115200);
+    } catch (Exception e) {
+        println("error:\n" + e);
+        port = new Serial(this, "/dev/ttyACM0", 115200);
+    } finally {
+    }
+    // port = new Serial(this, portName, 115200);
     port.write('r');    
 }
 
@@ -168,37 +198,46 @@ void draw() {
       int nextState = stateMachine.onExit();
       stateMachine.changeState(nextState);
     }
-
     audioEngine.execute();
-
-    if (!DJ_MODE) track1.setGain((float)mapRange(absSum, 1000, 22000, -10, 10));
-
+    
     /* Display numbers on screen */
     if (baseSong.isPlaying()) text("Playing: " + songName, 10, 20);
     text("x:" + formatNumber(x) + " y:" + formatNumber(y) + " z:" + formatNumber(z), 10, 40);
-    text("Sum: "+absSum, 300, 40);
+    if (!DJ_MODE) text("Sum: "+absSum, 300, 40);
+    else text("combinedR: " + combinedR,300, 40);
     text("gyro-x:" + gyroX, 10, 60);
     text(" y:" + gyroY, 140, 60);
     text(" z:" + gyroZ, 250, 60);
 
-    if (DJ_MODE) drawDJ();
-    else drawDance();
+    if (DJ_MODE) updateDJ();
+    else updateFree();
 }
 
-void drawDJ() {
+void updateDJ() {
     text("Gestures: " + gestureBuffer, 10 ,TEXT_ROW + 60);
     if (gestureBuffer.length() >= 3) {
         matchResult = matchGesture(gestureBuffer.substring(gestureBuffer.length() - 3));
         if( matchResult != "") gestureBuffer = "";
     }
-    text("Track " + audioEngine.getTrackIndex()+1, 10, TEXT_ROW);
+    text("Track " + trackIndex, 10, TEXT_ROW);
     text("Mode " + audioEngine.getCurrentModeName(), 10, TEXT_ROW + 20);
     // text("Beat z", 10, TEXT_ROW + 40);
 
     text("GESTURE MATCH: " + matchResult, 10, TEXT_ROW + 80);
 }
 
-void drawDance() {
+void updateFree() {
+    track1.setGain((float)mapRange(absSum, 1000, 22000, -10, 5));
+
+    // if either of them ended, rewide both so they starts the same
+    if ( baseSong.position() == baseSong.length() || track1.position() == track1.length())
+    {
+        baseSong.rewind();
+        baseSong.play();
+        track1.rewind();
+        track1.play();
+    }
+
     text("Beat x", 10, TEXT_ROW);
     text("Beat y", 10, TEXT_ROW + 20);
     text("Beat z", 10, TEXT_ROW + 40);
@@ -209,19 +248,19 @@ void drawDance() {
 
 String matchGesture(String gesture) {
     if  (gesture.compareTo(TRACK_1) == 0){
-        audioEngine.changeTrack(0);
+        trackIndex = 0;
         return TRACK_1;
     }
     else if (gesture.compareTo(TRACK_2) == 0) {
-        audioEngine.changeTrack(1);
+        trackIndex = 1;
         return TRACK_2;
     }
     else if (gesture.compareTo(TRACK_3) == 0) {
-        audioEngine.changeTrack(2);
+        trackIndex = 2;
         return TRACK_3;
     }
     else if (gesture.compareTo(TRACK_4) == 0) {
-        audioEngine.changeTrack(3);
+        trackIndex = 3;
         return TRACK_4;
     }
     else if (gesture.compareTo(PAN) == 0) {
@@ -257,9 +296,7 @@ String matchGesture(String gesture) {
     else return "";
 }
 
-
-
-double mapRange(double x, int in_min, int in_max, int out_min, int out_max)
+public double mapRange(double x, int in_min, int in_max, int out_min, int out_max)
 {
  return (x - in_min) * (out_max - out_min) / (in_max - in_min) + out_min;
 }
@@ -283,25 +320,6 @@ void serialEvent(Serial port)
        }
     }
     else initializePort();
-}
-
-void initializeAudio() {
-    audioEngine = new AudioManipulation();
-    baseSong.play();
-    baseSong.loop(10);
-    if (DJ_MODE) {
-        for (int i = 0; i < track.length; i++) {
-            track[i].play();
-            track[i].loop();
-            track[i].mute();
-        }
-    }
-    else {
-        track1.play();
-        track1.loop();
-    }
-    stateMachine.changeState(IDLE_STATE);
-
 }
 
 boolean parseData(int data)
